@@ -5,7 +5,9 @@ import {
   SignUpCommandInput,
 } from '@aws-sdk/client-cognito-identity-provider';
 import { Injectable } from '@nestjs/common';
+import { CognitoJwtVerifier } from 'aws-jwt-verify';
 import * as crypto from 'crypto';
+
 import {
   ConfirmSignupDTO,
   RefreshIdentityTokenDTO,
@@ -18,6 +20,7 @@ export class AuthService {
   private identityProvider: CognitoIdentityProvider;
   private clientId = process.env.AWS_COGNITO_APP_CLIENT_ID;
   private clientSecret = process.env.AWS_COGNITO_APP_CLIENT_SECRET;
+  private userPoolId = process.env.AWS_COGNITO_USER_POOL_ID;
   private secretKey: crypto.KeyObject;
 
   constructor() {
@@ -90,13 +93,30 @@ export class AuthService {
       AuthFlow: 'REFRESH_TOKEN_AUTH',
       AuthParameters: {
         REFRESH_TOKEN: refreshToken,
-        SECRET_HASH: this.#generateHash('ceyicef794@dixiser.com'),
+        SECRET_HASH: this.#generateHash(userId),
       },
     };
 
     const data = await this.identityProvider.initiateAuth(params);
 
     console.log(data);
+  }
+
+  async verifyToken(token: string): Promise<{ username: string } | null> {
+    const verifier = CognitoJwtVerifier.create({
+      userPoolId: this.userPoolId,
+      tokenUse: 'access',
+      clientId: this.clientId,
+    });
+
+    try {
+      const payload = await verifier.verify(token);
+      console.log('Token is valid. Payload:', payload);
+      return { username: payload.username };
+    } catch {
+      console.log('Token not valid!');
+      return null;
+    }
   }
 
   #generateHash(username: string) {

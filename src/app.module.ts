@@ -5,6 +5,7 @@ import { AppController } from './app.controller';
 import { AppService } from './app.service';
 import { validationSchemaForEnv } from './config/env-vars.config';
 import { AuthModule } from './modules/auth/auth.module';
+import { HomeModule } from './modules/home/home.module';
 
 @Module({
   imports: [
@@ -13,6 +14,7 @@ import { AuthModule } from './modules/auth/auth.module';
       validationSchema: validationSchemaForEnv,
     }),
     AuthModule,
+    HomeModule,
   ],
   controllers: [AppController],
   providers: [AppService],
