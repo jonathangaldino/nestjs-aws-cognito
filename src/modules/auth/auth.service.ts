@@ -1,6 +1,7 @@
 import {
   CognitoIdentityProvider,
   ConfirmSignUpCommandInput,
+  GetUserCommandInput,
   InitiateAuthCommandInput,
   SignUpCommandInput,
 } from '@aws-sdk/client-cognito-identity-provider';
@@ -111,12 +112,22 @@ export class AuthService {
 
     try {
       const payload = await verifier.verify(token);
-      console.log('Token is valid. Payload:', payload);
       return { username: payload.username };
     } catch {
-      console.log('Token not valid!');
       return null;
     }
+  }
+
+  async getUserData(accessToken: string) {
+    const params: GetUserCommandInput = {
+      AccessToken: accessToken,
+    };
+
+    const response = await this.identityProvider.getUser(params);
+
+    const userData = response.UserAttributes;
+
+    console.log(userData);
   }
 
   #generateHash(username: string) {

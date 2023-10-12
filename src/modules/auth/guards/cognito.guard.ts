@@ -31,7 +31,13 @@ export class CognitoGuard implements CanActivate {
       throw new UnauthorizedException();
     }
 
-    request['user'] = { username: isAuthorized.username };
+    await this.authService.getUserData(token);
+
+    const user = {
+      username: isAuthorized.username,
+    };
+
+    request['user'] = user;
 
     return Promise.resolve(true);
   }
