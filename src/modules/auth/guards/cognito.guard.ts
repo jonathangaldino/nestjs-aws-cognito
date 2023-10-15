@@ -31,14 +31,14 @@ export class CognitoGuard implements CanActivate {
       throw new UnauthorizedException();
     }
 
-    await this.authService.getUserData(token);
+    const { error, data } = await this.authService.getUserData(token);
 
-    const user = {
-      username: isAuthorized.username,
-    };
+    if (error) {
+      throw new UnauthorizedException(error);
+    }
 
-    request['user'] = user;
+    request['user'] = data;
 
-    return Promise.resolve(true);
+    return true;
   }
 }

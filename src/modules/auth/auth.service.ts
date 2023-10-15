@@ -9,6 +9,7 @@ import { Injectable } from '@nestjs/common';
 import { CognitoJwtVerifier } from 'aws-jwt-verify';
 import * as crypto from 'crypto';
 
+import { toErrorWithMessage } from '../error-handler';
 import {
   ConfirmSignupDTO,
   RefreshIdentityTokenDTO,
@@ -52,9 +53,21 @@ export class AuthService {
       ],
     };
 
-    const data = await this.identityProvider.signUp(params);
+    try {
+      const data = await this.identityProvider.signUp(params);
 
-    console.log({ data });
+      return {
+        data: {
+          userId: data.UserSub,
+          isPendingConfirmation: !data.UserConfirmed,
+        },
+        error: null,
+      };
+    } catch (err) {
+      const message = toErrorWithMessage(err);
+
+      return { error: message, data: null };
+    }
   }
 
   async confirm({ confirmationCode, email }: ConfirmSignupDTO) {
@@ -65,9 +78,15 @@ export class AuthService {
       SecretHash: this.#generateHash(email),
     };
 
-    const data = await this.identityProvider.confirmSignUp(params);
+    try {
+      await this.identityProvider.confirmSignUp(params);
 
-    console.log(data);
+      return { data: {}, error: null };
+    } catch (err) {
+      const message = toErrorWithMessage(err);
+
+      return { error: message, data: null };
+    }
   }
 
   async signin({ email, password }: SigninDTO) {
@@ -81,8 +100,23 @@ export class AuthService {
       },
     };
 
-    const data = await this.identityProvider.initiateAuth(params);
-    console.log({ data });
+    try {
+      const data = await this.identityProvider.initiateAuth(params);
+      return {
+        error: null,
+        data: {
+          token: data.AuthenticationResult.AccessToken,
+          tokenType: data.AuthenticationResult.TokenType,
+          idToken: data.AuthenticationResult.IdToken,
+          refreshToken: data.AuthenticationResult.RefreshToken,
+          expiresIn: data.AuthenticationResult.AccessToken,
+        },
+      };
+    } catch (err) {
+      const message = toErrorWithMessage(err);
+
+      return { error: message, data: null };
+    }
   }
 
   async refreshIdentityToken({
@@ -98,9 +132,24 @@ export class AuthService {
       },
     };
 
-    const data = await this.identityProvider.initiateAuth(params);
+    try {
+      const data = await this.identityProvider.initiateAuth(params);
 
-    console.log(data);
+      return {
+        error: null,
+        data: {
+          token: data.AuthenticationResult.AccessToken,
+          tokenType: data.AuthenticationResult.TokenType,
+          idToken: data.AuthenticationResult.IdToken,
+          refreshToken: data.AuthenticationResult.RefreshToken,
+          expiresIn: data.AuthenticationResult.AccessToken,
+        },
+      };
+    } catch (err) {
+      const message = toErrorWithMessage(err);
+
+      return { error: message, data: null };
+    }
   }
 
   async verifyToken(token: string): Promise<{ username: string } | null> {
@@ -123,11 +172,21 @@ export class AuthService {
       AccessToken: accessToken,
     };
 
-    const response = await this.identityProvider.getUser(params);
+    try {
+      const response = await this.identityProvider.getUser(params);
 
-    const userData = response.UserAttributes;
+      return {
+        error: null,
+        data: {
+          userId: response.Username,
+          attributes: response.UserAttributes,
+        },
+      };
+    } catch (err) {
+      const message = toErrorWithMessage(err);
 
-    console.log(userData);
+      return { error: message, data: null };
+    }
   }
 
   #generateHash(username: string) {

@@ -14,25 +14,39 @@ export class AuthController {
 
   @Post('/signup')
   async signup(@Body() dto: SignupDTO, @Res() res: Response) {
-    await this.service.signup(dto);
+    const { error, data } = await this.service.signup(dto);
 
-    return res
-      .status(HttpStatus.OK)
-      .json({ message: 'Registered. Pending confirmation.' });
+    if (error) {
+      return res.status(HttpStatus.BAD_REQUEST).json({
+        error,
+      });
+    } else {
+      return res.status(HttpStatus.CREATED).json(data);
+    }
   }
 
   @Post('/signup/confirm')
   async confirmAccount(@Body() dto: ConfirmSignupDTO, @Res() res: Response) {
-    await this.service.confirm(dto);
+    const { error } = await this.service.confirm(dto);
 
-    return res.status(HttpStatus.OK).json({ message: 'Account confirmed' });
+    if (error) {
+      return res.status(HttpStatus.BAD_REQUEST).json({
+        error,
+      });
+    } else {
+      return res.status(HttpStatus.NO_CONTENT).send();
+    }
   }
 
   @Post('/signin')
   async signin(@Body() dto: SigninDTO, @Res() res: Response) {
-    await this.service.signin(dto);
+    const { error, data } = await this.service.signin(dto);
 
-    return res.status(HttpStatus.OK).json({ message: 'Signed in' });
+    if (error) {
+      return res.status(HttpStatus.UNAUTHORIZED).json({ error });
+    }
+
+    return res.status(HttpStatus.CREATED).json(data);
   }
 
   @Post('/refresh')
@@ -40,10 +54,12 @@ export class AuthController {
     @Body() dto: RefreshIdentityTokenDTO,
     @Res() res: Response,
   ) {
-    await this.service.refreshIdentityToken(dto);
+    const { error, data } = await this.service.refreshIdentityToken(dto);
 
-    return res
-      .status(HttpStatus.OK)
-      .json({ message: 'Succeded in refreshing identity token' });
+    if (error) {
+      return res.status(HttpStatus.UNAUTHORIZED).json({ error });
+    }
+
+    return res.status(HttpStatus.CREATED).json(data);
   }
 }
